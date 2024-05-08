@@ -95,7 +95,20 @@ def train_loop(rank, args):
                     else:
                         output = model.network(batch)
                     val_loss = model.loss_fn(output, batch["label"])
-                    _, predictions = torch.max(output, 1)
+
+                     # CHANGES
+                    # away, left, right
+                    left_prob = output[1]
+                    right_prob = output[2]
+
+                    threshold_val = 0.1
+                    if Math.abs(right_prob - left_prob) <= threshold_val:
+                        predictions = 3
+                    else:
+                        _, predictions = torch.max(output, 1) # (max, max_indices)
+                    # END CHANGES
+
+                    # _, predictions = torch.max(output, 1)
                     num_datapoints += batch["label"].shape[0]
                     running_loss += val_loss.item() * batch["label"].shape[0]
                     running_corrects += torch.sum(torch.eq(predictions, batch["label"])).item()
@@ -160,7 +173,20 @@ def predict_on_preprocessed(args):
             logging.info("batch: {} / {}".format(i, len(val_dataset) // args.batch_size))
             output = model.network(batch)
             # val_loss = model.loss_fn(output, batch["label"])
-            _, predictions = torch.max(output, 1)
+
+             # CHANGES
+            # away, left, right
+            left_prob = output[1]
+            right_prob = output[2]
+
+            threshold_val = 0.1
+            if Math.abs(right_prob - left_prob) <= threshold_val:
+                predictions = 3
+            else:
+                _, predictions = torch.max(output, 1) # (max, max_indices)
+            # END CHANGES
+            
+            # _, predictions = torch.max(output, 1)
             for t, p in zip(batch["label"].cpu().view(-1), predictions.cpu().view(-1)):
                 confusion_matrix[t.long(), p.long()] += 1
             num_datapoints += batch["label"].shape[0]
