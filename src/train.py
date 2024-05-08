@@ -10,6 +10,7 @@ import torch.distributed as dist
 import numpy as np
 from pathlib import Path
 from visualize import calculate_confusion_matrix
+import Math
 
 
 def train_loop(rank, args):
@@ -44,7 +45,20 @@ def train_loop(rank, args):
             model.optimizer.zero_grad()
             output = model.network(batch)
             train_loss = model.loss_fn(output, batch["label"])
-            _, predictions = torch.max(output, 1)
+
+            # CHANGES
+            # away, left, right
+            left_prob = output[1]
+            right_prob = output[2]
+
+            threshold_val = 0.1
+            if Math.abs(right_prob - left_prob) <= threshold_val:
+                predictions = 3
+            else:
+                _, predictions = torch.max(output, 1) # (max, max_indices)
+            # END CHANGES
+            
+            # _, predictions = torch.max(output, 1) # (max, max_indices)
             train_loss.backward()
             model.optimizer.step()
             train_loss_np = train_loss.cpu().detach().numpy()
